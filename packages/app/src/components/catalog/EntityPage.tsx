@@ -158,6 +158,7 @@ import { WorkflowsOrExternalCICard } from './WorkflowsOrExternalCICard';
 import { EntityJenkinsContent } from '@backstage-community/plugin-jenkins';
 import { EntityGithubActionsContent } from '@backstage-community/plugin-github-actions';
 import { EntityGitlabContent } from '@immobiliarelabs/backstage-plugin-gitlab';
+import { EntityInsightsContent } from './EntityInsightsContent';
 
 // Wires perch's per-row assistant button into the observability log
 // tables via the plugin's render-prop slot. Lives here (not inside the
@@ -450,6 +451,10 @@ const ServiceEntityPage = () => {
       >
         <EntityGitlabContent />
       </EntityLayout.Route>
+
+      <EntityLayout.Route path="/tech-insights" title="Insights">
+        <EntityInsightsContent />
+      </EntityLayout.Route>
     </EntityLayoutWithDelete>
   );
 };
@@ -573,6 +578,10 @@ const GenericComponentEntityPage = () => {
       >
         <EntityGitlabContent />
       </EntityLayout.Route>
+
+      <EntityLayout.Route path="/tech-insights" title="Insights">
+        <EntityInsightsContent />
+      </EntityLayout.Route>
     </EntityLayoutWithDelete>
   );
 };
@@ -592,6 +601,10 @@ const defaultEntityPage = (
 
     <EntityLayout.Route path="/docs" title="Docs" if={hasTechdocsAnnotation}>
       {techdocsContent}
+    </EntityLayout.Route>
+
+    <EntityLayout.Route path="/tech-insights" title="Insights">
+      <EntityInsightsContent />
     </EntityLayout.Route>
   </EntityLayout>
 );
@@ -791,6 +804,9 @@ const systemPage = (
       <FeatureGatedContent feature="observability">
         <ObservabilityCostAnalysis />
       </FeatureGatedContent>
+    </EntityLayout.Route>
+    <EntityLayout.Route path="/tech-insights" title="Insights">
+      <EntityInsightsContent />
     </EntityLayout.Route>
   </EntityLayoutWithDelete>
 );

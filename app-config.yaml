@@ -369,3 +369,45 @@ events:
 permission:
   # setting this to `false` will disable permissions
   enabled: true
+
+# Tech Insights — scorecards/checks against catalog entities.
+# Play environment: short initialDelay so facts populate right after backend
+# startup instead of waiting for the first cadence tick.
+techInsights:
+  factRetrievers:
+    entityMetadataFactRetriever:
+      cadence: '*/5 * * * *'
+      initialDelay: { seconds: 20 }
+      lifecycle: { timeToLive: { days: 1 } }
+    entityOwnershipFactRetriever:
+      cadence: '*/5 * * * *'
+      initialDelay: { seconds: 20 }
+      lifecycle: { timeToLive: { days: 1 } }
+    techdocsFactRetriever:
+      cadence: '*/5 * * * *'
+      initialDelay: { seconds: 20 }
+      lifecycle: { timeToLive: { days: 1 } }
+    # Phase 1 (Scoring & Compliance): tech-insights-backend-module-github.
+    # Retrievers added via the techInsightsFactRetrieversExtensionPoint are
+    # silently dropped unless also listed here — confirmed by reading
+    # createFactRetrieverRegistrationFromConfig in the installed
+    # @backstage-community/plugin-tech-insights-backend package.
+    githubRepoMetadataFactRetriever:
+      cadence: '*/5 * * * *'
+      initialDelay: { seconds: 20 }
+      lifecycle: { timeToLive: { days: 1 } }
+  # factChecker.checks (titleCheck, descriptionCheck, groupOwnerCheck, techDocsCheck,
+  # repoNotArchivedCheck) intentionally removed — checks are now managed via
+  # tech-insights-backend-module-dynamic-checks's DB-backed registry instead of
+  # static config. repoNotArchivedCheck is recreated through the check-editor UI
+  # as the walkthrough's first authored check (same GitHub fact, same result).
+  maturity:
+    # MaturityClient.getCheckResults already special-cases Component entities
+    # (`enableCompoundEntityCheck || isComponentEntity(entity)`), so this flag
+    # only changes behavior for System/Domain/Group entities. OpenChoreo sync
+    # currently produces Systems (projects) with zero synced child Components
+    # (Component sync isn't live yet) — with this flag `false`, those System
+    # pages would aggregate from an empty component list and show nothing.
+    # Keep `true` until OpenChoreo Component sync lands; flip to `false` (the
+    # library default) once Systems have real child Components to roll up.
+    enableCompoundEntityCheck: true

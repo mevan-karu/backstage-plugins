@@ -63,6 +63,7 @@ import catalogImportPluginAlpha from '@backstage/plugin-catalog-import/alpha';
 import apiDocsPluginAlpha from '@backstage/plugin-api-docs/alpha';
 import kubernetesPluginAlpha from '@backstage/plugin-kubernetes/alpha';
 import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
+import { InsightsPage } from './components/insights/InsightsPage';
 import { RequirePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { appThemes } from './themes';
@@ -145,6 +146,17 @@ const routes = (
       element={<CatalogGraphPage renderNode={CustomGraphNode} />}
     />
     <Route path="/platform-overview" element={<PlatformOverviewPage />} />
+    {/*
+      Security-manager-facing Insights page: catalog-wide compliance overview
+      (ComplianceOverviewContent, reading maturityApiRef directly) plus check
+      configuration (CheckManagementPanel) as two tabs of one page — neither
+      is a routable/component extension, so unlike the vendor
+      tech-insights/tech-insights-maturity pages this replaces, there's no
+      routable-extension discovery requirement to satisfy here. Per-component
+      results live on each entity's own "Insights" tab instead (see
+      EntityInsightsContent.tsx), which reads the same maturityApiRef.
+    */}
+    <Route path="/tech-insights" element={<InsightsPage />} />
     {/*
       Standalone full-window exec terminal, opened in a new browser tab from the
       resource drawer. The page renders a fixed viewport overlay over the app

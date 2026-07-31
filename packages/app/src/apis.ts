@@ -14,6 +14,7 @@ import {
   fetchApiRef,
   storageApiRef,
 } from '@backstage/core-plugin-api';
+import { catalogApiRef } from '@backstage/plugin-catalog-react';
 import { OAuth2 } from '@backstage/core-app-api';
 import { VisitsWebStorageApi, visitsApiRef } from '@backstage/plugin-home';
 
@@ -38,6 +39,24 @@ import {
   perchAgentApiRef,
   PerchAgentClient,
 } from '@openchoreo/backstage-plugin-openchoreo-portal-assistant';
+// Same situation as perchAgentApiRef above: dynamicChecksApiRef is declared
+// on techInsightsCheckEditorPlugin.apis, but CheckManagementPanel (embedded
+// directly in InsightsPage) is a plain component, not a routable/component
+// extension — so the plugin loader never visits that apis array. This
+// explicit factory is the one actually wired in.
+import {
+  dynamicChecksApiRef,
+  DynamicChecksClient,
+} from '@openchoreo/backstage-plugin-tech-insights-react-check-editor';
+// Same situation again: maturityApiRef is declared on
+// techInsightsMaturityPlugin.apis, but nothing in this app renders any of
+// that plugin's routable/component extensions anymore (EntityInsightsContent
+// and ComplianceOverviewContent both call maturityApiRef directly instead) —
+// so the plugin loader never visits its apis array either.
+import {
+  maturityApiRef,
+  MaturityClient,
+} from '@backstage-community/plugin-tech-insights-maturity';
 
 export const apis: AnyApiFactory[] = [
   createApiFactory({
@@ -145,5 +164,37 @@ export const apis: AnyApiFactory[] = [
     },
     factory: ({ discoveryApi, fetchApi }) =>
       new PerchAgentClient({ discoveryApi, fetchApi }),
+  }),
+
+  // Dynamic checks API for CheckManagementPanel — see import-site comment.
+  createApiFactory({
+    api: dynamicChecksApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      fetchApi: fetchApiRef,
+    },
+    factory: ({ discoveryApi, fetchApi }) =>
+      new DynamicChecksClient(discoveryApi, fetchApi),
+  }),
+
+  // Maturity API for EntityInsightsContent / ComplianceOverviewContent — see
+  // import-site comment.
+  createApiFactory({
+    api: maturityApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      identityApi: identityApiRef,
+      catalogApi: catalogApiRef,
+      configApi: configApiRef,
+    },
+    factory: ({ discoveryApi, identityApi, catalogApi, configApi }) =>
+      new MaturityClient({
+        discoveryApi,
+        identityApi,
+        catalogApi,
+        enableCompoundEntityCheck: configApi.getOptionalBoolean(
+          'techInsights.maturity.enableCompoundEntityCheck',
+        ),
+      }),
   }),
 ];

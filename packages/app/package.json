@@ -21,6 +21,9 @@
   "dependencies": {
     "@backstage-community/plugin-github-actions": "^0.20.0",
     "@backstage-community/plugin-jenkins": "^0.28.0",
+    "@backstage-community/plugin-tech-insights": "^1.4.0",
+    "@backstage-community/plugin-tech-insights-maturity": "^0.9.2",
+    "@backstage-community/plugin-tech-insights-maturity-common": "^0.6.0",
     "@backstage/app-defaults": "^1.7.8",
     "@backstage/catalog-client": "^1.15.1",
     "@backstage/catalog-model": "^1.9.0",
@@ -73,6 +76,7 @@
     "@openchoreo/backstage-plugin-openchoreo-workflows": "workspace:^",
     "@openchoreo/backstage-plugin-platform-engineer-core": "workspace:^",
     "@openchoreo/backstage-plugin-react": "workspace:^",
+    "@openchoreo/backstage-plugin-tech-insights-react-check-editor": "workspace:^",
     "@rjsf/core": "5.24.13",
     "@rjsf/material-ui": "5.24.13",
     "@rjsf/utils": "5.24.13",
