@@ -38,6 +38,7 @@ import GroupIcon from '@material-ui/icons/People';
 import { identityApiRef, useApi } from '@backstage/core-plugin-api';
 import CategoryIcon from '@material-ui/icons/Category';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
+import AssessmentIcon from '@material-ui/icons/Assessment';
 import { AssistantDrawerProvider } from '@openchoreo/backstage-plugin-openchoreo-portal-assistant';
 // This app composes some OpenChoreo entity tabs itself via legacy
 // `EntityLayout.Route` JSX (see EntityPage.tsx), so they render OUTSIDE the
@@ -237,6 +238,11 @@ export const Root = ({ children }: PropsWithChildren<{}>) => {
                   icon={GroupIcon}
                 />
                 <SidebarItem icon={ExtensionIcon} to="api-docs" text="APIs" />
+                <SidebarItem
+                  icon={AssessmentIcon}
+                  to="tech-insights"
+                  text="Insights"
+                />
                 {/* TechDocs disabled until proper production support is implemented */}
                 {/* <SidebarItem icon={LibraryBooks} to="docs" text="Docs" /> */}
                 <SidebarItem

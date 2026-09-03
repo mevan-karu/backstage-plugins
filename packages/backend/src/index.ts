@@ -69,6 +69,17 @@ backend.add(
 // See https://backstage.io/docs/features/software-catalog/configuration#subscribing-to-catalog-errors
 backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
 
+// tech-insights plugin — scorecards/checks against catalog entities
+//
+// The jsonfc module (config-driven checks from app-config.yaml) is
+// deliberately NOT registered here. tech-insights-backend-module-dynamic-checks
+// (below) constructs its own JsonRulesEngineFactCheckerFactory backed by a
+// DB-persisted registry and calls setFactCheckerFactory itself — that
+// extension point only keeps the last factory registered, so registering
+// both here would race, with whichever module's init ran last silently
+// winning. See docs/scoring-compliance/tech-insights-backend-module-dynamic-checks.md.
+backend.add(import('@backstage-community/plugin-tech-insights-backend'));
+
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
 // OpenChoreo permission policy - handles openchoreo.* permissions via /authz/profile API
@@ -128,4 +139,6 @@ backend.add(
 backend.add(
   import('@openchoreo/backstage-plugin-openchoreo-portal-assistant-backend'),
 );
+backend.add(import('@openchoreo/backstage-plugin-tech-insights-backend-module-github'));
+backend.add(import('@openchoreo/backstage-plugin-tech-insights-backend-module-dynamic-checks'));
 backend.start();
