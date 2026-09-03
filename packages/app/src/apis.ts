@@ -15,7 +15,8 @@ import {
   storageApiRef,
 } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
-import { OAuth2 } from '@backstage/core-app-api';
+import { OAuth2, GithubAuth } from '@backstage/core-app-api';
+import { githubAuthApiRef } from '@backstage/core-plugin-api';
 import { VisitsWebStorageApi, visitsApiRef } from '@backstage/plugin-home';
 
 // No explicit default theme id is seeded into localStorage. Backstage's
@@ -65,6 +66,33 @@ export const apis: AnyApiFactory[] = [
     factory: ({ configApi }) => ScmIntegrationsApi.fromConfig(configApi),
   }),
   ScmAuth.createDefaultApiFactory(),
+
+  // GitHub OAuth — needed so ScmAuth (and the githubActionsApiRef factory
+  // registered by the `githubActionsPluginAlpha` NFS feature in App.tsx,
+  // which the GitHub Actions card depends on) can obtain a per-user GitHub
+  // token. Backend provider is already registered in
+  // packages/backend/src/index.ts; this just wires up the frontend side.
+  // NOTE: githubActionsApiRef itself must NOT be registered here too — the
+  // vendor plugin's `/alpha` feature already provides an identical factory,
+  // and Backstage's app plugin throws a hard API_FACTORY_CONFLICT at boot
+  // if two extensions (this file's `app`-scoped one and the plugin's
+  // `github-actions`-scoped one) both provide the same ApiRef.
+  createApiFactory({
+    api: githubAuthApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      oauthRequestApi: oauthRequestApiRef,
+      configApi: configApiRef,
+    },
+    factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
+      GithubAuth.create({
+        discoveryApi,
+        oauthRequestApi,
+        configApi,
+        defaultScopes: ['read:user', 'repo'],
+        environment: configApi.getOptionalString('auth.environment'),
+      }),
+  }),
 
   // Custom PermissionApi that injects IDP token for OpenChoreo authorization
   // This is needed because Backstage's default PermissionClient doesn't allow
