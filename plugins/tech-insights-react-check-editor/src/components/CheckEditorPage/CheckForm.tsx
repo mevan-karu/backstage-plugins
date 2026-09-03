@@ -16,6 +16,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { InfoCard } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import { dynamicChecksApiRef } from '../../api/DynamicChecksApi';
+import { AskPortalAssistantButton } from './AskPortalAssistantButton';
 import { DEFAULT_CHECK_CATEGORIES } from '../../constants';
 import {
   factFieldsOf,
@@ -255,7 +256,13 @@ export function CheckForm(props: CheckFormProps) {
 
         {/* Define the check */}
         <Grid item xs={12}>
-          <SectionLabel>Define the check</SectionLabel>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <SectionLabel>Define the check</SectionLabel>
+            <AskPortalAssistantButton
+              factSchemas={factSchemas}
+              factIds={factIds}
+            />
+          </Box>
         </Grid>
         <Grid item xs={12}>
           <Autocomplete
