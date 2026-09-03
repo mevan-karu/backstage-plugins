@@ -31,10 +31,15 @@ export class DynamicChecksClient implements DynamicChecksApi {
       throw new Error(`API request failed (${response.status}): ${errorText}`);
     }
 
-    if (response.status === 204) {
+       if (response.status === 204) {
       return undefined as T;
     }
-    return response.json();
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+    return JSON.parse(text) as T;
+
   }
 
   async listChecks(): Promise<DynamicCheck[]> {

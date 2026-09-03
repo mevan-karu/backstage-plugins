@@ -124,12 +124,19 @@ export async function createDynamicChecksRouter(
     const error = basicValidate(draft);
     if (error) return res.status(400).json({ error });
     await registry.register(draft);
-    try {
+        try {
       const [result] = await runChecksViaTechInsights(entity, [draft.id]);
+      if (!result) {
+        return res.status(422).json({
+          error:
+            'No facts available for this entity/check combination yet — has the fact retriever run for this entity?',
+        });
+      }
       return res.json(result);
     } finally {
       await registry.delete(draft.id);
     }
+
   });
 
   logger.info('Dynamic checks router mounted');
