@@ -54,11 +54,14 @@ backend:
   # The production database configuration is stored in app-config.production.yaml
   database:
     client: better-sqlite3
-    # v1.51 config schema rejects bare-string connection; use object form.
-    # filename: ':memory:' produces an in-memory SQLite database, identical
-    # behavior to the legacy connection: ':memory:' bare-string form.
+    # `directory` gives each plugin its own persistent .sqlite file on disk.
+    # NOTE: a base-level `connection.filename: ':memory:'` here would silently
+    # win over any `directory` override in app-config.local.yaml — the sqlite
+    # connector checks `filename` first and short-circuits before ever
+    # looking at `directory` (see Sqlite3Connector.getDatabaseName). Keep this
+    # as `directory`, not `filename`, or local overrides stop persisting.
     connection:
-      filename: ':memory:'
+      directory: ./.backstage-db
   # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
 
 integrations:
