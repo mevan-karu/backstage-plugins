@@ -14,7 +14,9 @@ import {
   fetchApiRef,
   storageApiRef,
 } from '@backstage/core-plugin-api';
-import { OAuth2 } from '@backstage/core-app-api';
+import { catalogApiRef } from '@backstage/plugin-catalog-react';
+import { OAuth2, GithubAuth } from '@backstage/core-app-api';
+import { githubAuthApiRef } from '@backstage/core-plugin-api';
 import { VisitsWebStorageApi, visitsApiRef } from '@backstage/plugin-home';
 
 // No explicit default theme id is seeded into localStorage. Backstage's
@@ -38,6 +40,24 @@ import {
   perchAgentApiRef,
   PerchAgentClient,
 } from '@openchoreo/backstage-plugin-openchoreo-portal-assistant';
+// Same situation as perchAgentApiRef above: dynamicChecksApiRef is declared
+// on techInsightsCheckEditorPlugin.apis, but CheckManagementPanel (embedded
+// directly in InsightsPage) is a plain component, not a routable/component
+// extension — so the plugin loader never visits that apis array. This
+// explicit factory is the one actually wired in.
+import {
+  dynamicChecksApiRef,
+  DynamicChecksClient,
+} from '@openchoreo/backstage-plugin-tech-insights-react-check-editor';
+// Same situation again: maturityApiRef is declared on
+// techInsightsMaturityPlugin.apis, but nothing in this app renders any of
+// that plugin's routable/component extensions anymore (EntityInsightsContent
+// and ComplianceOverviewContent both call maturityApiRef directly instead) —
+// so the plugin loader never visits its apis array either.
+import {
+  maturityApiRef,
+  MaturityClient,
+} from '@backstage-community/plugin-tech-insights-maturity';
 
 export const apis: AnyApiFactory[] = [
   createApiFactory({
@@ -46,6 +66,33 @@ export const apis: AnyApiFactory[] = [
     factory: ({ configApi }) => ScmIntegrationsApi.fromConfig(configApi),
   }),
   ScmAuth.createDefaultApiFactory(),
+
+  // GitHub OAuth — needed so ScmAuth (and the githubActionsApiRef factory
+  // registered by the `githubActionsPluginAlpha` NFS feature in App.tsx,
+  // which the GitHub Actions card depends on) can obtain a per-user GitHub
+  // token. Backend provider is already registered in
+  // packages/backend/src/index.ts; this just wires up the frontend side.
+  // NOTE: githubActionsApiRef itself must NOT be registered here too — the
+  // vendor plugin's `/alpha` feature already provides an identical factory,
+  // and Backstage's app plugin throws a hard API_FACTORY_CONFLICT at boot
+  // if two extensions (this file's `app`-scoped one and the plugin's
+  // `github-actions`-scoped one) both provide the same ApiRef.
+  createApiFactory({
+    api: githubAuthApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      oauthRequestApi: oauthRequestApiRef,
+      configApi: configApiRef,
+    },
+    factory: ({ discoveryApi, oauthRequestApi, configApi }) =>
+      GithubAuth.create({
+        discoveryApi,
+        oauthRequestApi,
+        configApi,
+        defaultScopes: ['read:user', 'repo'],
+        environment: configApi.getOptionalString('auth.environment'),
+      }),
+  }),
 
   // Custom PermissionApi that injects IDP token for OpenChoreo authorization
   // This is needed because Backstage's default PermissionClient doesn't allow
@@ -145,5 +192,37 @@ export const apis: AnyApiFactory[] = [
     },
     factory: ({ discoveryApi, fetchApi }) =>
       new PerchAgentClient({ discoveryApi, fetchApi }),
+  }),
+
+  // Dynamic checks API for CheckManagementPanel — see import-site comment.
+  createApiFactory({
+    api: dynamicChecksApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      fetchApi: fetchApiRef,
+    },
+    factory: ({ discoveryApi, fetchApi }) =>
+      new DynamicChecksClient(discoveryApi, fetchApi),
+  }),
+
+  // Maturity API for EntityInsightsContent / ComplianceOverviewContent — see
+  // import-site comment.
+  createApiFactory({
+    api: maturityApiRef,
+    deps: {
+      discoveryApi: discoveryApiRef,
+      identityApi: identityApiRef,
+      catalogApi: catalogApiRef,
+      configApi: configApiRef,
+    },
+    factory: ({ discoveryApi, identityApi, catalogApi, configApi }) =>
+      new MaturityClient({
+        discoveryApi,
+        identityApi,
+        catalogApi,
+        enableCompoundEntityCheck: configApi.getOptionalBoolean(
+          'techInsights.maturity.enableCompoundEntityCheck',
+        ),
+      }),
   }),
 ];

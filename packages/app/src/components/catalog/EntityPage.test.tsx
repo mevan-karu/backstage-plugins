@@ -1,17 +1,21 @@
 import { render } from '@testing-library/react';
 import { Entity } from '@backstage/catalog-model';
 import { TestApiProvider } from '@backstage/test-utils';
-import { featureFlagsApiRef } from '@backstage/core-plugin-api';
+import { ConfigReader } from '@backstage/config';
+import { configApiRef, featureFlagsApiRef } from '@backstage/core-plugin-api';
 import { EntityProvider } from '@backstage/plugin-catalog-react';
 import { useComponentHasAnyCiliumEnabledEnvironment } from '@openchoreo/backstage-plugin-openchoreo-observability';
 
-// Control the Cilium gate without hitting the observability backend; keep every
-// other observability export real so module-load wiring is untouched.
+// Control the Cilium gate without hitting the observability backend, and stub
+// the wirelogs viewer itself (it has its own data-fetching APIs we don't wire
+// up here); keep every other observability export real so module-load wiring
+// is untouched.
 jest.mock('@openchoreo/backstage-plugin-openchoreo-observability', () => ({
   ...jest.requireActual(
     '@openchoreo/backstage-plugin-openchoreo-observability',
   ),
   useComponentHasAnyCiliumEnabledEnvironment: jest.fn(),
+  ObservabilityWirelogs: () => null,
 }));
 
 // The real delete-aware layout pulls catalog/permission APIs we don't need
@@ -22,9 +26,13 @@ jest.mock('./EntityLayoutWithDelete', () => ({
   ),
 }));
 
-// Replace EntityLayout with a shell that evaluates each route's `if` predicate
-// (so the Cilium-gated Wirelogs route runs) without mounting tab content. The
-// real EntitySwitch is kept so component-type routing still drives which page
+// Replace EntityLayout with a shell that evaluates each route's `if`
+// predicate (a light regression guard against predicates that throw) and
+// mounts the Wirelogs route's content specifically, since that's the one
+// route whose Cilium gating now lives in its content (WirelogsTabContent)
+// rather than in an `if` predicate — see the comment on serviceEntityPage in
+// EntityPage.tsx for why. Other routes' content is not mounted. The real
+// EntitySwitch is kept so component-type routing still drives which page
 // component renders.
 jest.mock('@backstage/plugin-catalog', () => {
   const actual = jest.requireActual('@backstage/plugin-catalog');
@@ -32,19 +40,23 @@ jest.mock('@backstage/plugin-catalog', () => {
     <>{children}</>
   );
   EntityLayout.Route = ({
+    path,
     if: predicate,
+    children,
   }: {
+    path?: string;
     if?: (...args: any[]) => any;
+    children?: React.ReactNode;
   }) => {
     if (typeof predicate === 'function') {
       try {
         predicate();
       } catch {
         // Sibling route predicates may expect a fully-populated entity; we only
-        // care that the gated routes' own predicates execute here.
+        // care that they execute without crashing the test here.
       }
     }
-    return null;
+    return path === '/wirelogs' ? <>{children}</> : null;
   };
   return { ...actual, EntityLayout };
 });
@@ -76,7 +88,12 @@ const featureFlagsApi = {
 // routable extension (techdocs etc.) in the tree.
 const renderPage = (entity: Entity) =>
   render(
-    <TestApiProvider apis={[[featureFlagsApiRef, featureFlagsApi]]}>
+    <TestApiProvider
+      apis={[
+        [featureFlagsApiRef, featureFlagsApi],
+        [configApiRef, new ConfigReader({})],
+      ]}
+    >
       <EntityProvider entity={entity}>{entityPage}</EntityProvider>
     </TestApiProvider>,
   );
@@ -86,7 +103,7 @@ beforeEach(() => {
 });
 
 describe('entityPage component routing', () => {
-  it('renders the service entity page and gates the Wirelogs route on Cilium availability', () => {
+  it('renders the service entity page and gates the Wirelogs tab content on Cilium availability', () => {
     mockHasCilium.mockReturnValue(true);
 
     // deployment/service maps to the "service" page variant.
@@ -97,7 +114,7 @@ describe('entityPage component routing', () => {
     );
   });
 
-  it('renders the generic component entity page and gates the Wirelogs route', () => {
+  it('renders the generic component entity page and gates the Wirelogs tab content', () => {
     mockHasCilium.mockReturnValue(false);
 
     // deployment/web-app maps to the "website" (non-service) variant.

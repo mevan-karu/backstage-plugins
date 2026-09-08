@@ -62,7 +62,23 @@ import catalogImportPluginAlpha from '@backstage/plugin-catalog-import/alpha';
 // they depend on are absent and the tabs throw `NotImplementedError`.
 import apiDocsPluginAlpha from '@backstage/plugin-api-docs/alpha';
 import kubernetesPluginAlpha from '@backstage/plugin-kubernetes/alpha';
+// GitHub Actions NFS plugin — registered so its `rootRouteRef` (parent of
+// `buildRouteRef`, used by RecentWorkflowRunsCard/EntityRecentGithubActionsRunsCard
+// to link to a specific run) is present in the NFS route-resolution table.
+// `page:catalog/entity`'s overridden loader (see customOverrides.tsx) renders
+// the fixed `entityPage` JSX directly and never reads `inputs.contents`, so
+// this plugin's `entity-content:github-actions` extension never actually
+// renders — it exists here purely so the shared `rootRouteRef` object (same
+// module singleton the legacy `EntityGithubActionsContent` tab inside
+// entityPage uses) gets a registered path. Without this, `useRouteRef` on
+// that shared routeRef throws "No path for routeRef{type=sub,id=github-actions/build}"
+// because entityPage's tabs are only ever discoverable through this NFS
+// extension tree, never through the legacy static-JSX route walk (entityPage
+// is mounted via an async `page:catalog/entity` loader override, not a
+// `<Route>` in `routes` below).
+import githubActionsPluginAlpha from '@backstage-community/plugin-github-actions/alpha';
 import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
+import { InsightsPage } from './components/insights/InsightsPage';
 import { RequirePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { appThemes } from './themes';
@@ -146,6 +162,17 @@ const routes = (
     />
     <Route path="/platform-overview" element={<PlatformOverviewPage />} />
     {/*
+      Security-manager-facing Insights page: catalog-wide compliance overview
+      (ComplianceOverviewContent, reading maturityApiRef directly) plus check
+      configuration (CheckManagementPanel) as two tabs of one page — neither
+      is a routable/component extension, so unlike the vendor
+      tech-insights/tech-insights-maturity pages this replaces, there's no
+      routable-extension discovery requirement to satisfy here. Per-component
+      results live on each entity's own "Insights" tab instead (see
+      EntityInsightsContent.tsx), which reads the same maturityApiRef.
+    */}
+    <Route path="/tech-insights" element={<InsightsPage />} />
+    {/*
       Standalone full-window exec terminal, opened in a new browser tab from the
       resource drawer. The page renders a fixed viewport overlay over the app
       chrome, so the terminal uses the entire window.
@@ -184,6 +211,7 @@ const app = createApp({
     catalogImportPluginAlpha,
     apiDocsPluginAlpha,
     kubernetesPluginAlpha,
+    githubActionsPluginAlpha,
     openchoreoPluginAlpha,
     openchoreoCiPluginAlpha,
     openchoreoObservabilityPluginAlpha,

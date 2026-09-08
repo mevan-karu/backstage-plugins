@@ -1,0 +1,65 @@
+{
+  "name": "@openchoreo/backstage-plugin-tech-insights-react-check-editor",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.esm.js",
+    "types": "dist/index.d.ts",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openchoreo/backstage-plugins.git",
+    "directory": "plugins/tech-insights-react-check-editor"
+  },
+  "backstage": {
+    "role": "frontend-plugin",
+    "pluginId": "tech-insights-check-editor",
+    "pluginPackages": [
+      "@openchoreo/backstage-plugin-tech-insights-react-check-editor"
+    ]
+  },
+  "sideEffects": false,
+  "scripts": {
+    "start": "backstage-cli package start",
+    "build": "backstage-cli package build",
+    "lint": "backstage-cli package lint",
+    "test": "backstage-cli package test",
+    "clean": "backstage-cli package clean",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack"
+  },
+  "dependencies": {
+    "@backstage/core-components": "^0.18.10",
+    "@backstage/core-plugin-api": "^1.12.6",
+    "@material-ui/core": "4.12.4",
+    "@material-ui/icons": "4.11.3",
+    "@material-ui/lab": "4.0.0-alpha.61",
+    "@openchoreo/backstage-plugin-openchoreo-portal-assistant": "workspace:^",
+    "@openchoreo/backstage-plugin-react": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-router-dom": "^6.0.0"
+  },
+  "devDependencies": {
+    "@backstage/cli": "^0.36.2",
+    "@backstage/core-app-api": "^1.20.1",
+    "@backstage/dev-utils": "^1.1.23",
+    "@backstage/test-utils": "^1.7.18",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "14.3.1",
+    "@testing-library/user-event": "14.6.1",
+    "react": "18.3.1"
+  },
+  "files": [
+    "dist"
+  ]
+}
