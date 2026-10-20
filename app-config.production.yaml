@@ -82,6 +82,25 @@ app:
     - entity-card:gitlab/merge-requests-stats: false
     - entity-card:gitlab/people: false
     - entity-card:gitlab/languages: false
+    # tech-insights-maturity is installed only for its API; the
+    # tech-insights-scorecards page, entity tab and summary card replace its
+    # own views.
+    - page:tech-insights-maturity: false
+    - entity-content:tech-insights-maturity/maturity: false
+    - entity-content:tech-insights-maturity/summary: false
+    - entity-card:tech-insights-maturity/maturity-summary: false
+    # OpenChoreo presents the generic scorecards plugin as Compliance.
+    - page:tech-insights-scorecards:
+        config:
+          path: /compliance
+          title: Compliance
+    - entity-content:tech-insights-scorecards:
+        config:
+          title: Compliance
+          group: compliance
+    - entity-card:tech-insights-scorecards/summary:
+        config:
+          title: Compliance
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins

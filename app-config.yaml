@@ -127,6 +127,27 @@ app:
     - entity-card:gitlab/merge-requests-stats: false
     - entity-card:gitlab/people: false
     - entity-card:gitlab/languages: false
+    # tech-insights-maturity is installed only for its API; the
+    # tech-insights-scorecards page, entity tab and summary card replace its
+    # own views.
+    - page:tech-insights-maturity: false
+    - entity-content:tech-insights-maturity/maturity: false
+    - entity-content:tech-insights-maturity/summary: false
+    - entity-card:tech-insights-maturity/maturity-summary: false
+    # OpenChoreo presents the generic scorecards plugin as Compliance. The
+    # `compliance` tab group isn't in the portal's GROUP_ORDER, so the tab
+    # sorts after the OpenChoreo tabs.
+    - page:tech-insights-scorecards:
+        config:
+          path: /compliance
+          title: Compliance
+    - entity-content:tech-insights-scorecards:
+        config:
+          title: Compliance
+          group: compliance
+    - entity-card:tech-insights-scorecards/summary:
+        config:
+          title: Compliance
 
 organization:
   name: OpenChoreo
@@ -494,3 +515,54 @@ events:
 permission:
   # setting this to `false` will disable permissions
   enabled: true
+
+# Tech Insights — scorecards/checks against catalog entities.
+# Play environment: short initialDelay so facts populate right after backend
+# startup instead of waiting for the first cadence tick.
+techInsights:
+  factRetrievers:
+    # Of the built-in retrievers only entityMetadataFactRetriever is enabled;
+    # a built-in with no entry here is never scheduled.
+    entityMetadataFactRetriever:
+      cadence: '*/5 * * * *'
+      initialDelay: { seconds: 20 }
+      lifecycle: { timeToLive: { days: 1 } }
+    # Phase 1 (Scoring & Compliance): tech-insights-backend-module-github.
+    # Retrievers added via the techInsightsFactRetrieversExtensionPoint are
+    # silently dropped unless also listed here — confirmed by reading
+    # createFactRetrieverRegistrationFromConfig in the installed
+    # @backstage-community/plugin-tech-insights-backend package.
+    #
+    # timeToLive is enforced on every run across all entities, so it is kept
+    # at several cadences: a component skipped by a transient failure keeps
+    # its last facts instead of losing them after one missed run.
+    githubRepoMetadataFactRetriever:
+      cadence: '0 */6 * * *'
+      initialDelay: { seconds: 20 }
+      lifecycle: { timeToLive: { days: 3 } }
+    githubBranchProtectionFactRetriever:
+      cadence: '0 2 * * *'
+      initialDelay: { seconds: 30 }
+      lifecycle: { timeToLive: { days: 7 } }
+  # Repository and branch resolution for tech-insights-backend-module-github.
+  # repoAnnotations keeps the module default (source-location, then
+  # project-slug); OpenChoreo records a component's build branch separately
+  # from its repository URL.
+  github:
+    branchAnnotations:
+      - openchoreo.io/branch
+  # factChecker.checks (titleCheck, descriptionCheck, groupOwnerCheck, techDocsCheck,
+  # repoNotArchivedCheck) intentionally removed — checks are now managed via
+  # tech-insights-backend-module-dynamic-checks's DB-backed registry instead of
+  # static config. repoNotArchivedCheck is recreated through the check-editor UI
+  # as the walkthrough's first authored check (same GitHub fact, same result).
+  maturity:
+    # MaturityClient.getCheckResults already special-cases Component entities
+    # (`enableCompoundEntityCheck || isComponentEntity(entity)`), so this flag
+    # only changes behavior for System/Domain/Group entities. OpenChoreo sync
+    # currently produces Systems (projects) with zero synced child Components
+    # (Component sync isn't live yet) — with this flag `false`, those System
+    # pages would aggregate from an empty component list and show nothing.
+    # Keep `true` until OpenChoreo Component sync lands; flip to `false` (the
+    # library default) once Systems have real child Components to roll up.
+    enableCompoundEntityCheck: true
