@@ -52,16 +52,17 @@ RUN mkdir packages/backend/dist/skeleton packages/backend/dist/bundle \
 
 # Stage 3 - Build the actual backend image and install production dependencies
 #
-# Floating node:22 requires >= 22.23.1, which ships the fix for the regression
-# that Node 22.23.0 / 24.17.0 introduced via the CVE-2026-48931 ("response queue
-# poisoning in http.Agent") security patch. That patch changed keep-alive
-# socket-reuse behaviour and tripped a latent node-fetch@2 bug, throwing
-# false-positive ERR_STREAM_PREMATURE_CLOSE on reused pooled sockets and breaking
-# Backstage's internal service-to-service calls (e.g. catalog -> permission) with
-# "Premature close" whenever authz is enabled. We temporarily pinned to 22.22 to
-# avoid it; Node 22.23.1 reverted the bad behaviour, so we float again.
+# Pinned to Node 22.23.4, the first 22.x whose bundled root store drops the
+# compromised eMudhra emSign ECC Root CA - G3. Any replacement must stay on
+# >= 22.23.1, which fixes the regression that Node 22.23.0 / 24.17.0 introduced
+# via the CVE-2026-48931 ("response queue poisoning in http.Agent") security
+# patch. That patch changed keep-alive socket-reuse behaviour and tripped a
+# latent node-fetch@2 bug, throwing false-positive ERR_STREAM_PREMATURE_CLOSE on
+# reused pooled sockets and breaking Backstage's internal service-to-service
+# calls (e.g. catalog -> permission) with "Premature close" whenever authz is
+# enabled.
 #   - Node.js fix: https://github.com/nodejs/node/pull/64004 (in 22.23.1+)
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d
 
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
