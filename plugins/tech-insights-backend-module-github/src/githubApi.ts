@@ -12,6 +12,25 @@ export class GithubRateLimitError extends Error {
   }
 }
 
+/**
+ * Whether a response means a rate limit rather than a refused request.
+ * GitHub answers both primary and secondary limits with 403 or 429, but only
+ * sets `x-ratelimit-remaining: 0` for the primary one; a secondary limit
+ * carries `retry-after` instead
+ * (https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+ * A 403 with neither header is a permission problem.
+ */
+export function isRateLimited(
+  status: number,
+  headers: Pick<Headers, 'get' | 'has'>,
+): boolean {
+  if (status === 429) return true;
+  return (
+    status === 403 &&
+    (headers.get('x-ratelimit-remaining') === '0' || headers.has('retry-after'))
+  );
+}
+
 export interface GithubApiResponse {
   status: number;
   body: any;
@@ -60,11 +79,7 @@ export function createGithubApi(
           },
         },
       );
-      if (
-        response.status === 429 ||
-        (response.status === 403 &&
-          response.headers.get('x-ratelimit-remaining') === '0')
-      ) {
+      if (isRateLimited(response.status, response.headers)) {
         throw new GithubRateLimitError(response.status);
       }
       const body = await response.json().catch(() => undefined);

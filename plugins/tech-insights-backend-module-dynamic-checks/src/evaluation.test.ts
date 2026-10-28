@@ -120,6 +120,21 @@ describe('CheckValidator', () => {
     ).resolves.toEqual([expect.objectContaining({ code: 'unknown-fact' })]);
   });
 
+  it('reads the schemas once for a whole set of checks', async () => {
+    const store = createStore({});
+    const { validator: own } = createEvaluation(store);
+    const checks = Array.from({ length: 30 }, (_, i) =>
+      check(`c${i}`, i % 2 ? 'githubIsArchived' : 'githubNoSuchFact'),
+    );
+
+    const problems = await own.problemsOfEach(checks);
+
+    expect(store.getLatestSchemas).toHaveBeenCalledTimes(1);
+    expect(problems.map(p => p.map(problem => problem.code))).toEqual(
+      checks.map((_, i) => (i % 2 ? [] : ['unknown-fact'])),
+    );
+  });
+
   it.each([
     [
       'an operator json-rules-engine lacks',

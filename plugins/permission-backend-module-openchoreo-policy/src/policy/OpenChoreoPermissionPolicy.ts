@@ -57,10 +57,10 @@ const CATALOG_PERMISSION_PREFIX = 'catalog.entity.';
  * and running checks, which every entity's scorecard tab needs) must keep
  * falling through to the allow-all default.
  *
- * The intended actions are `compliancechecks:view` and
- * `compliancechecks:manage`, but the control plane's authz profile only
- * returns actions it has registered (a `*` role doesn't cover unknown ones),
- * so these map onto existing actions until it registers them.
+ * The intended actions are `scorecards:view` and `scorecards:manage`, but
+ * the control plane's authz profile only returns actions it has registered
+ * (a `*` role doesn't cover unknown ones), so these map onto existing
+ * actions until it registers them.
  */
 const TECH_INSIGHTS_PERMISSION_TO_ACTION: Record<string, string> = {
   [dynamicCheckReadPermission.name]: 'namespace:view',

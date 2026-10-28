@@ -961,7 +961,7 @@ describe('translateComponentToEntity — repository annotations', () => {
 
     expect(entity.metadata.annotations).toMatchObject({
       'backstage.io/source-location':
-        'url:https://github.com/org/repo/tree/feature/login/services/api',
+        'url:https://github.com/org/repo/tree/feature/login/services/api/',
       'openchoreo.io/branch': 'feature/login',
     });
   });
@@ -970,7 +970,7 @@ describe('translateComponentToEntity — repository annotations', () => {
     const entity = withRepository({ url: 'https://github.com/org/repo' });
 
     expect(entity.metadata.annotations?.['backstage.io/source-location']).toBe(
-      'url:https://github.com/org/repo',
+      'url:https://github.com/org/repo/',
     );
     expect(
       entity.metadata.annotations?.['openchoreo.io/branch'],

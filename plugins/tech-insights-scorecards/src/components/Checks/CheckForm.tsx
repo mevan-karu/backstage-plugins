@@ -13,7 +13,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { makeStyles } from '@material-ui/core/styles';
 import { InfoCard } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
 import useAsync from 'react-use/lib/useAsync';
@@ -70,14 +69,6 @@ function defaultRuleJson() {
 }
 
 const DEFAULT_KINDS = ['Component'];
-
-const useStyles = makeStyles(theme => ({
-  // Centres the button on the entity field's 56px input, not on the field
-  // with its helper text below.
-  dryRunAction: {
-    paddingTop: `${theme.spacing(1) + 7}px !important`,
-  },
-}));
 
 type Field =
   | 'name'
@@ -147,7 +138,6 @@ export function CheckForm(props: CheckFormProps) {
     showTitle = true,
     onCancel,
   } = props;
-  const classes = useStyles();
   const api = useApi(dynamicChecksApiRef);
   // Ids tie each label to its input, which MUI only does when given one.
   const idPrefix = useId();
@@ -614,19 +604,15 @@ export function CheckForm(props: CheckFormProps) {
           <SectionLabel>Test it</SectionLabel>
         </Grid>
         <Grid item xs={12}>
-          <Grid container spacing={2} alignItems="flex-start">
-            <Grid item xs={12} sm={8}>
-              <DryRunEntityField
-                kinds={narrowingKinds}
-                value={entityRef}
-                onChange={next => {
-                  setEntityRef(next);
-                  clearError('entityRef');
-                }}
-                error={errors.entityRef}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4} className={classes.dryRunAction}>
+          <DryRunEntityField
+            kinds={narrowingKinds}
+            value={entityRef}
+            onChange={next => {
+              setEntityRef(next);
+              clearError('entityRef');
+            }}
+            error={errors.entityRef}
+            action={
               <Tooltip title={canManage ? '' : NOT_ALLOWED_TOOLTIP}>
                 <span>
                   <Button
@@ -638,8 +624,8 @@ export function CheckForm(props: CheckFormProps) {
                   </Button>
                 </span>
               </Tooltip>
-            </Grid>
-          </Grid>
+            }
+          />
         </Grid>
 
         {errorSummary('dryRun')}

@@ -28,6 +28,9 @@ function setup(options: {
   } as unknown as DynamicCheckRegistry;
   const validator = {
     problemsOf: jest.fn().mockResolvedValue(options.problems ?? []),
+    problemsOfEach: jest.fn(async (checks: unknown[]) =>
+      checks.map(() => options.problems ?? []),
+    ),
   };
   const scheduler = mockServices.scheduler.mock({
     triggerTask: options.triggerTask ?? jest.fn().mockResolvedValue(undefined),

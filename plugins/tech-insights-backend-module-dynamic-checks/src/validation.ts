@@ -37,6 +37,8 @@ export function factNamesIn(condition: unknown): string[] {
   return typeof node.fact === 'string' ? [node.fact] : [];
 }
 
+type FactSchemas = Awaited<ReturnType<TechInsightsStore['getLatestSchemas']>>;
+
 const RULE_CACHE_LIMIT = 500;
 
 const NOOP_EVENT = { type: 'noop' };
@@ -98,6 +100,30 @@ export class CheckValidator {
   constructor(private readonly store: TechInsightsStore) {}
 
   async problemsOf(check: CheckDefinition): Promise<CheckProblem[]> {
+    const [problems] = await this.problemsOfEach([check]);
+    return problems;
+  }
+
+  /**
+   * The problems of each check, in order. Checks are validated every time
+   * jsonfc evaluates an entity, so the schemas are read once for the whole
+   * set rather than once per check.
+   */
+  async problemsOfEach(checks: CheckDefinition[]): Promise<CheckProblem[][]> {
+    let schemas: Promise<FactSchemas> | undefined;
+    const loadSchemas = () => {
+      schemas ??= this.store.getLatestSchemas();
+      return schemas;
+    };
+    return Promise.all(
+      checks.map(check => this.problemsAgainst(check, loadSchemas)),
+    );
+  }
+
+  private async problemsAgainst(
+    check: CheckDefinition,
+    loadSchemas: () => Promise<FactSchemas>,
+  ): Promise<CheckProblem[]> {
     if (check.type !== JSON_RULE_ENGINE_CHECK_TYPE) {
       return [
         {
@@ -110,7 +136,10 @@ export class CheckValidator {
     const shape = await this.cachedRuleProblems(check.rule);
     if (shape.length > 0) return shape;
 
-    const schemas = await this.store.getLatestSchemas(check.factIds);
+    const allSchemas = await loadSchemas();
+    const schemas = allSchemas.filter(schema =>
+      check.factIds.includes(String(schema.id)),
+    );
     const known = new Set(schemas.map(schema => String(schema.id)));
     const unknownRetrievers = check.factIds.filter(id => !known.has(id));
     if (unknownRetrievers.length > 0) {
@@ -129,9 +158,6 @@ export class CheckValidator {
     const unknownFacts = [
       ...new Set(factNamesIn(check.rule.conditions)),
     ].filter(name => !provided.has(name));
-    if (unknownFacts.length === 0) return [];
-
-    const allSchemas = await this.store.getLatestSchemas();
     return unknownFacts.map(name => {
       const owner = allSchemas.find(
         schema => name in schema && !SCHEMA_METADATA_KEYS.has(name),

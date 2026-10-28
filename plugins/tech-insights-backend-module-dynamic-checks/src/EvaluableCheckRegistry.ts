@@ -49,13 +49,9 @@ export class EvaluableCheckRegistry
   private async evaluable(
     checks: TechInsightJsonRuleCheck[],
   ): Promise<TechInsightJsonRuleCheck[]> {
-    const verdicts = await Promise.all(
-      checks.map(async check => ({
-        check,
-        problems: await this.validator.problemsOf(check),
-      })),
-    );
-    return verdicts
+    const problemsOfEach = await this.validator.problemsOfEach(checks);
+    return checks
+      .map((check, index) => ({ check, problems: problemsOfEach[index] }))
       .filter(({ check, problems }) => {
         if (problems.length === 0) return true;
         const summary = problems.map(p => p.message).join(' ');

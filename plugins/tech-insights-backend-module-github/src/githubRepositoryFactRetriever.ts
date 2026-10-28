@@ -52,10 +52,9 @@ async function listCommunityFiles(
 export const GITHUB_REPOSITORY_FACT_RETRIEVER_ID =
   'githubRepositoryFactRetriever';
 
-// Field names are prefixed because the checker merges every retriever's
-// facts into one flat namespace keyed by field name (confirmed by reading
-// JsonRulesEngineFactChecker.runChecks): a bare `isArchived` would collide
-// with any other retriever that happens to define the same field name.
+// Field names are prefixed because jsonfc merges every retriever's facts
+// into one flat namespace keyed by field name, so a bare `isArchived` would
+// collide with any other retriever that defines the same field name.
 const schema: FactRetriever['schema'] = {
   githubRepositoryResolved: {
     type: 'boolean',

@@ -44,5 +44,11 @@ latest release) also need `releasebinding:view` on the component. The API return
 caller can only partly see as 200 with the visible items, so the retriever reads the caller's
 authz profile and reports these facts only when the grant covers the component's
 `namespace/<ns>/project/<project>/component/<name>` path with no CEL condition and no denial at,
-above or below it. Otherwise it reports the Workload facts alone and checks that need bindings are
-skipped for that component. A control plane with authorization turned off grants everything.
+above or below it. A control plane with authorization turned off grants everything.
+
+Without that grant the retriever reports the Workload facts alone and leaves the deployment facts
+out rather than setting them to null. This is unlike an unresolved component. jsonfc skips a
+check when a fact it uses is missing, so a check on deployment facts has no result for that
+component. It neither passes nor fails, and the component's tier is decided by its other checks.
+When a deployment check shows no result on components that are deployed, grant the service
+credentials `releasebinding:view` on them.

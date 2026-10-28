@@ -144,12 +144,12 @@ export async function createDynamicChecksRouter(
       res.json(checks);
       return;
     }
+    const problemsOfEach = await validator.problemsOfEach(checks);
     res.json(
-      await Promise.all(
-        checks.map(async check => {
-          const problems = await validator.problemsOf(check);
-          return problems.length > 0 ? { ...check, problems } : check;
-        }),
+      checks.map((check, index) =>
+        problemsOfEach[index].length > 0
+          ? { ...check, problems: problemsOfEach[index] }
+          : check,
       ),
     );
   });

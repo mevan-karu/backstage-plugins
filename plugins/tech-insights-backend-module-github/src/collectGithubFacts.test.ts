@@ -116,13 +116,10 @@ describe('collectGithubFacts', () => {
     mockGetEntities.mockResolvedValue({
       items: [component('a', 'org/a'), component('b', 'org/b')],
     });
-    const facts = await collectGithubFacts(
-      context(),
-      async ({ entity }) => {
-        if (entity.metadata.name === 'a') throw new Error('HTTP 500');
-        return { githubIsArchived: false };
-      },
-    );
+    const facts = await collectGithubFacts(context(), async ({ entity }) => {
+      if (entity.metadata.name === 'a') throw new Error('HTTP 500');
+      return { githubIsArchived: false };
+    });
     expect(names(facts)).toEqual(['b']);
   });
 });

@@ -4,8 +4,9 @@
 ---
 
 Synced Components now carry `backstage.io/source-location` in the form
-Backstage itself writes, `url:<repo>/tree/<branch>/<appPath>`, instead of the
-bare repository URL. Tools that read the standard annotation (the "View
+Backstage itself writes, `url:<repo>/tree/<branch>/<appPath>/`, instead of the
+bare repository URL. The trailing `/` marks it as a folder, which Backstage
+needs to resolve relative paths against it. Tools that read the standard annotation (the "View
 source" link, Tech Insights fact retrievers) get the branch and the
 component's folder without an OpenChoreo-specific annotation.
 `openchoreo.io/branch` is still written, because a branch name containing `/`

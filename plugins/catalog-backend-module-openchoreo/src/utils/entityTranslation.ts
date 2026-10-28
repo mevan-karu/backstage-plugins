@@ -277,8 +277,10 @@ export function translateComponentToEntity(
           const repoInfo = getRepositoryInfo(component);
           const sourceUrl = getRepositoryUrl(component);
           return {
+            // Backstage resolves paths relative to a folder location only
+            // when it ends with `/`.
             ...(sourceUrl && {
-              'backstage.io/source-location': `url:${sourceUrl}`,
+              'backstage.io/source-location': `url:${sourceUrl}/`,
             }),
             ...(repoInfo.branch && {
               [CHOREO_ANNOTATIONS.BRANCH]: repoInfo.branch,

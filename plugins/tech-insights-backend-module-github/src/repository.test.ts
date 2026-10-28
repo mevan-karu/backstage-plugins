@@ -50,6 +50,10 @@ describe('parseRepositoryReference', () => {
       { host: 'github.com', owner: 'org', name: 'repo', ref: 'main' },
     ],
     [
+      'url:https://github.com/org/repo/tree/main/services/api/',
+      { host: 'github.com', owner: 'org', name: 'repo', ref: 'main' },
+    ],
+    [
       'https://github.com/org/repo/blob/dev/README.md',
       { host: 'github.com', owner: 'org', name: 'repo', ref: 'dev' },
     ],
