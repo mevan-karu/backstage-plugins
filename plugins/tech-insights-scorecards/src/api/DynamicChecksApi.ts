@@ -1,5 +1,6 @@
 import { createApiRef } from '@backstage/frontend-plugin-api';
 import type {
+  CheckProblem,
   DryRunResult,
   DynamicCheck,
   DynamicCheckInput,
@@ -21,6 +22,8 @@ export interface DynamicChecksApi {
   publishCheck(id: string): Promise<void>;
   unpublishCheck(id: string): Promise<void>;
   dryRun(entityRef: string, check: DynamicCheckInput): Promise<DryRunResult>;
+  /** Why a rule over the given retrievers' facts can't be evaluated, if it can't. */
+  validateRule(factIds: string[], rule: unknown): Promise<CheckProblem[]>;
   /** Schemas of the fact retrievers registered with tech-insights. */
   listFactSchemas(): Promise<FactSchema[]>;
   /** Scheduled fact retrievers with their schedule and last/next run. */

@@ -2,6 +2,7 @@ import { DiscoveryApi, FetchApi } from '@backstage/core-plugin-api';
 import { parseErrorResponseBody } from '@backstage/errors';
 import type { DynamicChecksApi } from './DynamicChecksApi';
 import type {
+  CheckProblem,
   DryRunResult,
   DynamicCheck,
   DynamicCheckInput,
@@ -131,6 +132,17 @@ export class DynamicChecksClient implements DynamicChecksApi {
       method: 'POST',
       body: { entity: entityRef, check },
     });
+  }
+
+  async validateRule(
+    factIds: string[],
+    rule: unknown,
+  ): Promise<CheckProblem[]> {
+    const { problems } = await this.apiFetch<{ problems: CheckProblem[] }>(
+      '/dynamic-checks/validate',
+      { method: 'POST', body: { factIds, rule } },
+    );
+    return problems;
   }
 
   async listFactSchemas(): Promise<FactSchema[]> {

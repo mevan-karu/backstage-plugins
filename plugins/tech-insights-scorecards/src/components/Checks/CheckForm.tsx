@@ -28,9 +28,11 @@ import {
   useKindDisplay,
 } from '../../kinds';
 import { CHECK_TIERS } from '../../tierPalette';
-import { useCodeStyles } from '../codeStyles';
 import { useTierLabel } from '../useTierLabel';
 import { useCoveredKindsText } from '../FactCollectorsPanel/CollectorInfoButton';
+import { FORMAT_SHORTCUT, SUGGEST_SHORTCUT } from '../JsonEditor/JsonEditor';
+import { FilterEditor } from '../JsonEditor/FilterEditor';
+import { RuleEditor } from '../JsonEditor/RuleEditor';
 import { DryRunEntityField } from './DryRunEntityField';
 import { DryRunResultView } from './DryRunResultView';
 import {
@@ -177,7 +179,6 @@ export function CheckForm(props: CheckFormProps) {
   const kindOptions = useCatalogKinds() ?? DEFAULT_KINDS;
   const kindLabel = useKindDisplay();
   const tierLabel = useTierLabel();
-  const codeClasses = useCodeStyles();
   const sortedKindOptions = [...kindOptions].sort((a, b) =>
     kindLabel(a).localeCompare(kindLabel(b)),
   );
@@ -463,33 +464,27 @@ export function CheckForm(props: CheckFormProps) {
           </Grid>
         )}
         <Grid item xs={12}>
-          <TextField
-            id={fieldId('filter')}
-            label={rawFilter ? 'Entity filter (JSON)' : undefined}
-            inputProps={
+          <FilterEditor
+            label={
               rawFilter
-                ? undefined
-                : { 'aria-label': 'Additional entity criteria' }
+                ? 'Entity filter (JSON)'
+                : 'Additional entity criteria (optional)'
             }
-            fullWidth
-            multiline
-            minRows={rawFilter ? 4 : 2}
-            placeholder={
-              'Additional entity filtering criteria (optional)\ne.g. {"spec.lifecycle": "production"}'
-            }
+            kinds={narrowingKinds}
+            raw={rawFilter}
+            placeholder='e.g. {"spec.lifecycle": "production"}'
             error={!!errors.filter}
             helperText={
               errors.filter ??
               (rawFilter
                 ? 'Leave empty to apply to all entities the chosen facts support.'
-                : 'JSON object of entity fields that must also match, keyed by path, e.g. spec.type or metadata.annotations["backstage.io/techdocs-ref"]. Matching is case-insensitive; an array value matches any of its entries.')
+                : `Entity fields that must also match, keyed by path, e.g. spec.type or metadata.annotations['backstage.io/techdocs-ref']. Matching ignores case; an array value matches any of its entries. ${SUGGEST_SHORTCUT} suggests paths and values.`)
             }
             value={filterJson}
-            onChange={e => {
-              setFilterJson(e.target.value);
+            onChange={next => {
+              setFilterJson(next);
               clearError('filter');
             }}
-            InputProps={{ classes: { input: codeClasses.code } }}
           />
         </Grid>
 
@@ -578,20 +573,21 @@ export function CheckForm(props: CheckFormProps) {
           </Grid>
         )}
         <Grid item xs={12}>
-          <TextField
-            id={fieldId('rule')}
+          <RuleEditor
             label="Rule (json-rules-engine conditions)"
-            fullWidth
-            multiline
-            minRows={8}
             value={ruleJson}
-            onChange={e => {
-              setRuleJson(e.target.value);
+            onChange={next => {
+              setRuleJson(next);
               clearError('rule');
             }}
+            factIds={factIds}
+            factSchemas={factSchemas}
+            canValidate={canManage}
             error={!!errors.rule}
-            helperText={errors.rule}
-            InputProps={{ classes: { input: codeClasses.code } }}
+            helperText={
+              errors.rule ??
+              `Press ${SUGGEST_SHORTCUT} to suggest keys, facts, operators and values, and ${FORMAT_SHORTCUT} to format.`
+            }
           />
         </Grid>
         <Grid item xs={12}>

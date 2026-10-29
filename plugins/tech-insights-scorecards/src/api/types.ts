@@ -29,6 +29,10 @@ export interface CheckProblem {
   code: 'unknown-retriever' | 'unknown-fact' | 'invalid-rule';
   message: string;
   factRetrieverId?: string;
+  /** JSON pointer into the rule at the condition an invalid rule fails on. */
+  path?: string;
+  /** The fact an unknown-fact problem is about. */
+  fact?: string;
 }
 
 export interface DynamicCheck extends DynamicCheckInput {
