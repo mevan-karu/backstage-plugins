@@ -8,6 +8,7 @@ import {
   Progress,
 } from '@backstage/core-components';
 import type { DynamicCheck, FactSchema } from '../../api/types';
+import { useEntityLabel } from '../../kinds';
 import { CheckPolicyTable } from '../Checks/CheckPolicyTable';
 import { FactCollectorsPanel } from '../FactCollectorsPanel';
 import { useCheckPermissions } from '../useCheckPermissions';
@@ -52,6 +53,7 @@ export function ScorecardsPage({
   const [editingCategories, setEditingCategories] = useState<string[]>([]);
   const [scoreRefreshKey, setScoreRefreshKey] = useState(0);
   const permissions = useCheckPermissions();
+  const entityLabel = useEntityLabel();
   // Scores come from tech-insights itself, which enforces its own
   // permissions. The dynamic-checks read permission gates the page only
   // where that module stores the checks: a portal without it has nothing
@@ -88,7 +90,7 @@ export function ScorecardsPage({
           <EmptyState
             missing="info"
             title="No access"
-            description="You don't have permission to view scores and checks across the catalog. Each entity's own scorecard is on its page."
+            description={`You don't have permission to view scores and checks across all ${entityLabel.plural}. Each ${entityLabel.singular}'s own scorecard is on its page.`}
           />
         )}
         {canView && view === 'checks' && (

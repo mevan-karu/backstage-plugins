@@ -3,11 +3,15 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import { InfoCard, Progress } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
-import { inSentence, useKindLabel } from '../../kinds';
+import { countOf, inSentence, useEntityLabel, useKindLabel } from '../../kinds';
 import { LoadErrorState } from '../LoadErrorState';
+import { ProgressRing } from '../ProgressRing';
 import { TierChip } from '../TierChip';
+import { TierLadder } from '../TierLadder';
 import { useEntityScorecard } from '../useEntityScorecard';
 import { useEntityTabLink } from '../useEntityTabLink';
+
+const RING_SIZE = 72;
 
 export interface EntityScorecardSummaryCardProps {
   title: string;
@@ -25,6 +29,7 @@ export function EntityScorecardSummaryCard({
   const { value, loading, error, retry } = useEntityScorecard(entity);
   const link = useEntityTabLink()(entity);
   const label = inSentence(useKindLabel()(entity.kind));
+  const entityLabel = useEntityLabel();
 
   let content;
   if (loading) {
@@ -44,21 +49,36 @@ export function EntityScorecardSummaryCard({
       </Typography>
     );
   } else {
-    const { rank, progress, descendantCount } = value.root;
+    const { rank, progress, descendantCount, checks } = value.root;
     const { categories } = value;
     content = (
       <Box display="flex" flexDirection="column" style={{ gap: 12 }}>
-        <Box display="flex" alignItems="center" style={{ gap: 8 }}>
-          <TierChip rank={rank} emphasis="filled" />
-          <Typography variant="body2">
-            {progress.passedChecks}/{progress.totalChecks} checks passing (
-            {progress.percentage}%)
-          </Typography>
+        <Box display="flex" alignItems="center" style={{ gap: 16 }}>
+          <ProgressRing
+            value={progress.percentage}
+            size={RING_SIZE}
+            label="Checks passing"
+          />
+          <Box display="flex" flexDirection="column" style={{ gap: 4 }}>
+            <Box display="flex">
+              <TierChip rank={rank} emphasis="filled" />
+            </Box>
+            <Typography variant="body2" color="textSecondary">
+              {progress.passedChecks} of {progress.totalChecks} checks passing
+            </Typography>
+          </Box>
         </Box>
+        <TierLadder checks={checks} />
         {descendantCount > 0 && (
           <Typography variant="caption" color="textSecondary">
             Combined from this {label} and the{' '}
-            {descendantCount === 1 ? 'entity' : `${descendantCount} entities`}{' '}
+            {descendantCount === 1
+              ? entityLabel.singular
+              : countOf(
+                  descendantCount,
+                  entityLabel.singular,
+                  entityLabel.plural,
+                )}{' '}
             in it.
           </Typography>
         )}

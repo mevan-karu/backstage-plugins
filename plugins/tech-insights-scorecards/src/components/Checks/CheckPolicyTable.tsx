@@ -185,7 +185,10 @@ export function CheckPolicyTable(props: CheckPolicyTableProps) {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return checks.filter(c => {
+    const rankOf = (c: DynamicCheck) => Number(c.metadata?.rank ?? 0);
+    const byTier = (a: DynamicCheck, b: DynamicCheck) =>
+      rankOf(a) - rankOf(b) || a.name.localeCompare(b.name);
+    const matching = checks.filter(c => {
       if (query && !c.name.toLowerCase().includes(query)) return false;
       if (categoryFilter && c.metadata?.category !== categoryFilter)
         return false;
@@ -194,6 +197,7 @@ export function CheckPolicyTable(props: CheckPolicyTableProps) {
       if (statusFilter && c.status !== statusFilter) return false;
       return true;
     });
+    return matching.sort(byTier);
   }, [checks, search, categoryFilter, tierFilter, statusFilter]);
 
   useEffect(() => {

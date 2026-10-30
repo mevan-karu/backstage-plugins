@@ -1,5 +1,10 @@
 import { Rank } from '@backstage-community/plugin-tech-insights-maturity-common';
-import { catalogProgress, checkSummaries, tierCounts } from './breakdown';
+import {
+  catalogProgress,
+  checkSummaries,
+  kindSummaries,
+  tierCounts,
+} from './breakdown';
 import { childRefsOf, createRollup, normalizeRef } from './rollup';
 import { entity, result } from './testUtils';
 
@@ -114,6 +119,36 @@ describe('catalog totals', () => {
     const desc = checkSummaries(nodes).find(s => s.check.id === 'desc')!;
     expect(desc.passing.map(n => n.ref)).toEqual(['component:default/api']);
     expect(desc.failing.map(n => n.ref)).toEqual(['component:default/worker']);
+  });
+
+  it('lists checks lowest tier first, then by failures', () => {
+    expect(checkSummaries(nodes).map(s => s.check.id)).toEqual([
+      'desc',
+      'owner',
+      'system-tagged',
+    ]);
+  });
+
+  it('gives a kind with checks of its own a pass rate', () => {
+    const [components, systems] = kindSummaries(nodes, ['Component', 'System']);
+    expect(components).toMatchObject({
+      kind: 'Component',
+      notScored: 0,
+      progress: { passedChecks: 3, totalChecks: 4 },
+    });
+    expect(components.nodes.map(n => n.ref)).toEqual([
+      'component:default/api',
+      'component:default/worker',
+    ]);
+    expect(components.tiers[Rank.Stone]).toBe(1);
+    expect(components.tiers[Rank.Silver]).toBe(1);
+    expect(systems.progress).toMatchObject({ totalChecks: 1 });
+  });
+
+  it('gives a kind whose tiers only roll up no pass rate', () => {
+    const [domains] = kindSummaries(nodes, ['Domain']);
+    expect(domains.progress).toBeUndefined();
+    expect(domains.tiers[Rank.Stone]).toBe(1);
   });
 
   it('leaves unscored entities out of the tier counts', () => {

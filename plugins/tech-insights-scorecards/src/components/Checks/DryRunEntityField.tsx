@@ -9,7 +9,7 @@ import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
 import useAsync from 'react-use/lib/useAsync';
 import useDebounce from 'react-use/lib/useDebounce';
-import { useKindDisplay } from '../../kinds';
+import { capitalized, useEntityLabel, useKindDisplay } from '../../kinds';
 
 const RESULT_LIMIT = 20;
 
@@ -51,6 +51,7 @@ export function DryRunEntityField({
 }: DryRunEntityFieldProps) {
   const catalogApi = useApi(catalogApiRef);
   const kindDisplay = useKindDisplay();
+  const entityLabel = useEntityLabel();
   const helperId = useId();
   const classes = useStyles();
   const [term, setTerm] = useState('');
@@ -104,8 +105,10 @@ export function DryRunEntityField({
             renderInput={params => (
               <TextField
                 {...params}
-                label="Entity to dry-run against"
-                placeholder="Search by name, or type an entity ref"
+                label={`${capitalized(
+                  entityLabel.singular,
+                )} to dry-run against`}
+                placeholder="Search by name, or type a ref like component:default/name"
                 error={!!error}
                 inputProps={{
                   ...params.inputProps,
@@ -120,8 +123,10 @@ export function DryRunEntityField({
       <FormHelperText id={helperId} error={!!error} variant="outlined">
         {error ??
           (kinds.length > 0
-            ? `Showing ${kinds.map(kindDisplay).join(', ')} entities.`
-            : 'Showing entities of every kind.')}
+            ? `Showing ${kinds.map(kindDisplay).join(', ')} ${
+                entityLabel.plural
+              }.`
+            : `Showing ${entityLabel.plural} of every kind.`)}
       </FormHelperText>
     </div>
   );

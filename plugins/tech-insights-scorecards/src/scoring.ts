@@ -40,6 +40,48 @@ export function rankOf(checks: MaturityCheckResult[]): Rank {
   );
 }
 
+export interface TierProgress {
+  rank: Rank;
+  passedChecks: number;
+  totalChecks: number;
+}
+
+/**
+ * Checks passing per tier, lowest tier first. Bronze, Silver and Gold are
+ * always included, at 0/0 when no check carries them, so tiers line up
+ * from one entity to the next.
+ */
+export function progressByTier(checks: MaturityCheckResult[]): TierProgress[] {
+  const tiers = new Map<Rank, TierProgress>(
+    [Rank.Bronze, Rank.Silver, Rank.Gold].map(rank => [
+      rank,
+      { rank, passedChecks: 0, totalChecks: 0 },
+    ]),
+  );
+  checks.forEach(c => {
+    const rank: Rank = c.check.metadata?.rank ?? Rank.Stone;
+    if (!tiers.has(rank))
+      tiers.set(rank, { rank, passedChecks: 0, totalChecks: 0 });
+    const tier = tiers.get(rank)!;
+    tier.totalChecks += 1;
+    if (c.result) tier.passedChecks += 1;
+  });
+  return Array.from(tiers.values()).sort((a, b) => a.rank - b.rank);
+}
+
+/** Lowest tier first, then failing before passing, then by name. */
+export function compareCheckResults(
+  a: MaturityCheckResult,
+  b: MaturityCheckResult,
+): number {
+  return (
+    (a.check.metadata?.rank ?? Rank.Stone) -
+      (b.check.metadata?.rank ?? Rank.Stone) ||
+    Number(a.result) - Number(b.result) ||
+    a.check.name.localeCompare(b.check.name)
+  );
+}
+
 export interface CategoryProgress extends CheckProgress {
   category: string;
 }

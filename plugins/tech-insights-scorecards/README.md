@@ -1,8 +1,8 @@
 # @openchoreo/backstage-plugin-tech-insights-scorecards
 
-Scorecards over Backstage Tech Insights: a catalog-wide page with a pass-rate summary, a
-per-entity tier breakdown, the checks table and editor (draft, dry-run, publish), and a Data
-sources panel; plus a scorecard tab on each entity page. Checks are managed through
+Scorecards over Backstage Tech Insights: a catalog-wide page with a pass-rate summary and a
+breakdown by kind, the checks table and editor (draft, dry-run, publish), and a Data sources
+panel; plus a scorecard tab on each entity page. Checks are managed through
 `@openchoreo/backstage-plugin-tech-insights-backend-module-dynamic-checks`, without a config
 change or restart.
 
@@ -38,10 +38,11 @@ collector modules, each with a `techInsights.factRetrievers.<id>` schedule.
 
 ## Configure
 
-| Extension                                 | Config                                                                                                                                                                                    |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `page:tech-insights-scorecards`           | `path` (default `/scorecards`), `title` (default `Scorecards`), `kinds` (entity kinds scored, default every kind a published check applies to), `showChecks` (default `true`)             |
-| `entity-content:tech-insights-scorecards` | `title`, `group`, `filter` (default: Component, API, Resource, System, Domain and Group), `icon`. Keep the default `path` (`/scorecards`): the page, the card and the rollups link to it. |
+| Extension                                      | Config                                                                                                                                                                                                |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `page:tech-insights-scorecards`                | `path` (default `/scorecards`), `title` (default `Scorecards`), `kinds` (entity kinds scored, default every kind a published check applies to), `showChecks` (default `true`)                         |
+| `entity-content:tech-insights-scorecards`      | `title`, `group`, `filter` (default: Component, API, Resource, System, Domain and Group), `icon`. Keep the default `path` (`/scorecards`): the page, the card and the rollups link to it.             |
+| `entity-card:tech-insights-scorecards/summary` | A card for the Overview tab with the tier, ring, tier ladder and category bars, linking to the tab. `title`, `filter` (default: System, Domain and Group). Set to `false` to leave scores to the tab. |
 
 ```yaml
 app:
@@ -64,8 +65,10 @@ the portal keeps checks in `app-config` with the upstream jsonfc checker.
 
 Kind and tier names come from app config, since the page, tab, card and check form all show
 them. Kinds without an entry are split into words (`DeploymentPipeline` reads "Deployment
-pipeline"); the check form's kind picker shows the names and saves the kinds. Tier names use the
-maturity plugin's own keys and default to Stone, Bronze, Silver and Gold:
+pipeline"); the check form's kind picker shows the names and saves the kinds. Text that covers
+several kinds, such as "13 of 28 checks pass across 6 entities", uses `entityLabel`, which
+defaults to "entity" and "entities". Tier names use the maturity plugin's own keys and default
+to Stone, Bronze, Silver and Gold:
 
 ```yaml
 techInsights:
@@ -73,6 +76,9 @@ techInsights:
     kindLabels:
       System: Project
       Domain: Namespace
+    entityLabel:
+      singular: resource
+      plural: resources
   maturity:
     rank:
       bronze: { title: Foundational }

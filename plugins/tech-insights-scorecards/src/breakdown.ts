@@ -35,9 +35,16 @@ export function tierCounts(nodes: RollupNode[]): TierCounts {
 
 export interface KindSummary {
   kind: string;
-  entities: number;
+  /** Every entity of the kind, in the order given. */
+  nodes: RollupNode[];
   notScored: number;
   tiers: TierCounts;
+  /**
+   * Checks passing across the kind's own results, or undefined when no
+   * entity of the kind has checks of its own and its tiers come only from
+   * what belongs to it, as for a System.
+   */
+  progress?: CheckProgress;
 }
 
 export function kindSummaries(
@@ -46,11 +53,13 @@ export function kindSummaries(
 ): KindSummary[] {
   return kinds.map(kind => {
     const ofKind = nodes.filter(node => node.entity.kind === kind);
+    const ownChecks = ofKind.flatMap(node => node.ownChecks);
     return {
       kind,
-      entities: ofKind.length,
+      nodes: ofKind,
       notScored: ofKind.filter(node => !node.scored).length,
       tiers: tierCounts(ofKind),
+      progress: ownChecks.length > 0 ? progressOf(ownChecks) : undefined,
     };
   });
 }
@@ -62,8 +71,8 @@ export interface CheckSummary {
 }
 
 /**
- * Each check with the entities it passed and failed on, most failures
- * first. Only entities a check ran against are counted.
+ * Each check with the entities it passed and failed on, lowest tier first,
+ * then most failures. Only entities a check ran against are counted.
  */
 export function checkSummaries(nodes: RollupNode[]): CheckSummary[] {
   const byId = new Map<string, CheckSummary>();
@@ -79,6 +88,8 @@ export function checkSummaries(nodes: RollupNode[]): CheckSummary[] {
   );
   return Array.from(byId.values()).sort(
     (a, b) =>
+      (a.check.metadata?.rank ?? Rank.Stone) -
+        (b.check.metadata?.rank ?? Rank.Stone) ||
       b.failing.length - a.failing.length ||
       a.check.name.localeCompare(b.check.name),
   );

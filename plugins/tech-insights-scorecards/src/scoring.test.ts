@@ -1,5 +1,11 @@
 import type { MaturityCheckResult } from '@backstage-community/plugin-tech-insights-maturity-common';
-import { progressByCategory, progressOf, rankOf } from './scoring';
+import {
+  compareCheckResults,
+  progressByCategory,
+  progressByTier,
+  progressOf,
+  rankOf,
+} from './scoring';
 
 function result(
   rank: number,
@@ -57,6 +63,33 @@ describe('progress', () => {
         percentage: 100,
       },
       { category: 'Security', passedChecks: 1, totalChecks: 2, percentage: 50 },
+    ]);
+  });
+
+  it('counts passing checks per tier, lowest tier first, with every tier', () => {
+    expect(
+      progressByTier([result(3, false), result(1, true), result(1, false)]),
+    ).toEqual([
+      { rank: 1, passedChecks: 1, totalChecks: 2 },
+      { rank: 2, passedChecks: 0, totalChecks: 0 },
+      { rank: 3, passedChecks: 0, totalChecks: 1 },
+    ]);
+  });
+});
+
+describe('compareCheckResults', () => {
+  it('puts lower tiers first, then failing checks', () => {
+    const sorted = [
+      result(2, true),
+      result(1, true),
+      result(2, false),
+      result(1, false),
+    ].sort(compareCheckResults);
+    expect(sorted.map(c => [c.check.metadata.rank, c.result])).toEqual([
+      [1, false],
+      [1, true],
+      [2, false],
+      [2, true],
     ]);
   });
 });

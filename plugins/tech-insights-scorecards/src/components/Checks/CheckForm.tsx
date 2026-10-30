@@ -25,7 +25,9 @@ import {
 import {
   filterCoversKinds,
   useCatalogKinds,
+  useEntityLabel,
   useKindDisplay,
+  withArticle,
 } from '../../kinds';
 import { CHECK_TIERS } from '../../tierPalette';
 import { useTierLabel } from '../useTierLabel';
@@ -36,7 +38,6 @@ import { RuleEditor } from '../JsonEditor/RuleEditor';
 import { DryRunEntityField } from './DryRunEntityField';
 import { DryRunResultView } from './DryRunResultView';
 import {
-  factFieldsOf,
   type CheckLink,
   type DryRunResult,
   type DynamicCheck,
@@ -86,8 +87,8 @@ const FIELD_LABELS: Record<Field, string> = {
   name: 'Name',
   factIds: 'Fact retrievers',
   rule: 'Rule',
-  filter: 'Additional entity criteria',
-  entityRef: 'Entity to dry-run against',
+  filter: 'Additional criteria',
+  entityRef: 'Dry-run target',
   links: 'Reference links',
   rank: 'Maturity tier',
 };
@@ -176,24 +177,33 @@ export function CheckForm(props: CheckFormProps) {
   const rawFilter = initialFilter.raw;
   const [entityRef, setEntityRef] = useState('');
 
-  const kindOptions = useCatalogKinds() ?? DEFAULT_KINDS;
+  const catalogKinds = useCatalogKinds() ?? DEFAULT_KINDS;
   const kindLabel = useKindDisplay();
+  const entityLabel = useEntityLabel();
   const tierLabel = useTierLabel();
-  const sortedKindOptions = [...kindOptions].sort((a, b) =>
-    kindLabel(a).localeCompare(kindLabel(b)),
-  );
   // Retrievers keep a schema after they're removed, so only the ones
   // scheduled now are offered; a check keeps any it already uses.
   const { value: scheduledRetrievers } = useAsync(async () => {
     const collectors = await api.listFactCollectors();
     return new Set(collectors.map(collector => collector.id));
   }, [api]);
+  const scheduledSchemas = factSchemas.filter(
+    schema => scheduledRetrievers?.has(schema.id) ?? true,
+  );
+  // A check on a kind no retriever collects for never has a result.
+  const sortedKindOptions = catalogKinds
+    .filter(kind =>
+      scheduledSchemas.some(schema =>
+        filterCoversKinds(schema.entityFilter, [kind]),
+      ),
+    )
+    .sort((a, b) => kindLabel(a).localeCompare(kindLabel(b)));
   // The picker shows kind labels, so typed text is matched against them as
   // well as the kind itself before it goes into the filter.
   const kindOf = (text: string) => {
     const typed = text.trim().toLocaleLowerCase('en-US');
     return (
-      kindOptions.find(
+      catalogKinds.find(
         kind =>
           kind.toLocaleLowerCase('en-US') === typed ||
           kindLabel(kind).toLocaleLowerCase('en-US') === typed,
@@ -336,7 +346,11 @@ export function CheckForm(props: CheckFormProps) {
     const input = buildInput(false);
     if (!input) return;
     if (!entityRef.trim()) {
-      setErrors({ entityRef: 'Pick an entity to dry-run against.' });
+      setErrors({
+        entityRef: `Pick ${withArticle(
+          entityLabel.singular,
+        )} to dry-run against.`,
+      });
       return;
     }
 
@@ -361,7 +375,7 @@ export function CheckForm(props: CheckFormProps) {
     .filter(
       schema =>
         factIds.includes(schema.id) ||
-        ((scheduledRetrievers?.has(schema.id) ?? true) && covers(schema)),
+        (scheduledSchemas.includes(schema) && covers(schema)),
     )
     .map(schema => schema.id);
   const uncoveredRetrievers = factIds.filter(id => {
@@ -426,8 +440,8 @@ export function CheckForm(props: CheckFormProps) {
         {rawFilter ? (
           <Grid item xs={12}>
             <Alert severity="info">
-              This check's entity filter uses a form the kind picker can't show,
-              so it is edited as JSON below.
+              This check's filter uses a form the kind picker can't show, so it
+              is edited as JSON below.
             </Alert>
           </Grid>
         ) : (
@@ -456,8 +470,8 @@ export function CheckForm(props: CheckFormProps) {
               renderInput={params => (
                 <TextField
                   {...params}
-                  label="Entity kinds"
-                  helperText="The check runs only against entities of these kinds. Leave empty to run against every entity the chosen facts cover."
+                  label="Kinds"
+                  helperText={`The check runs only against ${entityLabel.plural} of these kinds. Leave empty to run against every ${entityLabel.singular} the chosen facts cover.`}
                 />
               )}
             />
@@ -466,19 +480,17 @@ export function CheckForm(props: CheckFormProps) {
         <Grid item xs={12}>
           <FilterEditor
             label={
-              rawFilter
-                ? 'Entity filter (JSON)'
-                : 'Additional entity criteria (optional)'
+              rawFilter ? 'Filter (JSON)' : 'Additional criteria (optional)'
             }
             kinds={narrowingKinds}
             raw={rawFilter}
-            placeholder='e.g. {"spec.lifecycle": "production"}'
+            placeholder={`e.g. {"metadata.annotations['openchoreo.io/component-type']": "deployment/service"}`}
             error={!!errors.filter}
             helperText={
               errors.filter ??
               (rawFilter
-                ? 'Leave empty to apply to all entities the chosen facts support.'
-                : `Entity fields that must also match, keyed by path, e.g. spec.type or metadata.annotations['backstage.io/techdocs-ref']. Matching ignores case; an array value matches any of its entries. ${SUGGEST_SHORTCUT} suggests paths and values.`)
+                ? `Leave empty to apply to all ${entityLabel.plural} the chosen facts support.`
+                : `Fields that must also match, keyed by path, e.g. spec.type or metadata.annotations['backstage.io/techdocs-ref']. Matching ignores case; an array value matches any of its entries. ${SUGGEST_SHORTCUT} suggests paths and values.`)
             }
             value={filterJson}
             onChange={next => {
@@ -549,27 +561,8 @@ export function CheckForm(props: CheckFormProps) {
               {uncoveredRetrievers.join(', ')}{' '}
               {uncoveredRetrievers.length === 1 ? "doesn't" : "don't"} collect
               facts for {narrowingKinds.map(kindLabel).join(', ')}, so the check
-              has no result on those entities.
+              has no result on those {entityLabel.plural}.
             </Alert>
-          </Grid>
-        )}
-        {factIds.length > 0 && (
-          <Grid item xs={12}>
-            <Typography variant="caption" color="textSecondary">
-              Available facts for reference in the rule below:
-            </Typography>
-            {factIds.map(id => {
-              const schema = factSchemas.find(f => f.id === id);
-              if (!schema) return null;
-              return (
-                <Typography key={id} variant="body2" component="div">
-                  <strong>{id}</strong>:{' '}
-                  {factFieldsOf(schema)
-                    .map(f => `${f.name} (${f.field.type})`)
-                    .join(', ')}
-                </Typography>
-              );
-            })}
           </Grid>
         )}
         <Grid item xs={12}>
@@ -586,7 +579,7 @@ export function CheckForm(props: CheckFormProps) {
             error={!!errors.rule}
             helperText={
               errors.rule ??
-              `Press ${SUGGEST_SHORTCUT} to suggest keys, facts, operators and values, and ${FORMAT_SHORTCUT} to format.`
+              `Press ${SUGGEST_SHORTCUT} to suggest facts from the selected retrievers, keys, operators and values, and ${FORMAT_SHORTCUT} to format.`
             }
           />
         </Grid>
@@ -654,7 +647,7 @@ export function CheckForm(props: CheckFormProps) {
             minRows={2}
             value={solution}
             onChange={e => setSolution(e.target.value)}
-            helperText="Shown with the check on each entity's scorecard, e.g. the setting to change or the command to run."
+            helperText={`Shown with the check on each ${entityLabel.singular}'s scorecard, e.g. the setting to change or the command to run.`}
           />
         </Grid>
         <Grid item xs={12}>
@@ -740,7 +733,9 @@ export function CheckForm(props: CheckFormProps) {
                 id={fieldId('category')}
                 label="Category"
                 fullWidth
-                helperText="Groups checks on an entity's scorecard. Pick one or type a new one."
+                helperText={`Groups checks on ${withArticle(
+                  entityLabel.singular,
+                )}'s scorecard. Pick one or type a new one.`}
               />
             )}
           />
@@ -760,7 +755,9 @@ export function CheckForm(props: CheckFormProps) {
             error={!!errors.rank}
             helperText={
               errors.rank ??
-              'Failing this check keeps an entity below this tier.'
+              `Failing this check keeps ${withArticle(
+                entityLabel.singular,
+              )} below this tier.`
             }
           >
             {CHECK_TIERS.map(tier => (

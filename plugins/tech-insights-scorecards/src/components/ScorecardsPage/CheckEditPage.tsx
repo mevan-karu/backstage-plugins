@@ -1,4 +1,5 @@
 import type { DynamicCheck, FactSchema } from '../../api/types';
+import { useEntityLabel } from '../../kinds';
 import { CheckForm } from '../Checks/CheckForm';
 import { FullPageView } from '../FullPageView';
 
@@ -25,11 +26,12 @@ export function CheckEditPage(props: CheckEditPageProps) {
     onSaved,
     onPublished,
   } = props;
+  const entityLabel = useEntityLabel();
 
   return (
     <FullPageView
       title={check ? `Edit check: ${check.name}` : 'New check'}
-      subtitle="Define the check, dry-run it against a sample entity, then save or publish."
+      subtitle={`Define the check, dry-run it against a sample ${entityLabel.singular}, then save or publish.`}
       onBack={onBack}
     >
       <CheckForm

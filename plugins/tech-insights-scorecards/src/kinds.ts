@@ -29,6 +29,86 @@ export function inSentence(label: string): string {
     : label.charAt(0).toLocaleLowerCase('en-US') + label.slice(1);
 }
 
+/** "Component" becomes "Components", "Policy" "Policies", "API" "APIs". */
+export function pluralOf(label: string): string {
+  if (/[^aeiou]y$/i.test(label)) return `${label.slice(0, -1)}ies`;
+  if (/(s|x|z|ch|sh)$/i.test(label)) return `${label}es`;
+  return `${label}s`;
+}
+
+/** "1 component", "4 component types". */
+export function countOf(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+/** "a resource", "an entity". */
+export function withArticle(word: string): string {
+  return `${/^[aeiou]/i.test(word) ? 'an' : 'a'} ${word}`;
+}
+
+/** "resource" becomes "Resource", for the start of a label. */
+export function capitalized(word: string): string {
+  return word.charAt(0).toLocaleUpperCase('en-US') + word.slice(1);
+}
+
+const MINOR_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'but',
+  'by',
+  'for',
+  'in',
+  'nor',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+]);
+
+/**
+ * Headline case for a column title, "Cluster Component Types Passing":
+ * every word capitalized except articles, conjunctions and short
+ * prepositions, unless one comes first.
+ */
+export function titleCase(text: string): string {
+  return text
+    .split(' ')
+    .map((word, index) =>
+      index > 0 && MINOR_WORDS.has(word.toLocaleLowerCase('en-US'))
+        ? word.toLocaleLowerCase('en-US')
+        : capitalized(word),
+    )
+    .join(' ');
+}
+
+export interface EntityLabel {
+  singular: string;
+  plural: string;
+}
+
+/**
+ * The word for what checks run against, in text that covers several kinds,
+ * from `techInsights.scorecards.entityLabel`. Text about one kind names the
+ * kind instead (see `useKindLabel`).
+ */
+export function useEntityLabel(): EntityLabel {
+  const config = useApi(configApiRef);
+  return useMemo(() => {
+    const singular =
+      config.getOptionalString(
+        'techInsights.scorecards.entityLabel.singular',
+      ) ?? 'entity';
+    const plural =
+      config.getOptionalString('techInsights.scorecards.entityLabel.plural') ??
+      (singular === 'entity' ? 'entities' : pluralOf(singular));
+    return { singular, plural };
+  }, [config]);
+}
+
 /**
  * The name to show for an entity kind, from
  * `techInsights.scorecards.kindLabels` (matched case-insensitively), else

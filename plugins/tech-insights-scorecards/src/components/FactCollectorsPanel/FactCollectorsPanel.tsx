@@ -23,6 +23,7 @@ import {
 import { useApi } from '@backstage/core-plugin-api';
 import { dynamicChecksApiRef } from '../../api/DynamicChecksApi';
 import type { FactCollector } from '../../api/types';
+import { useEntityLabel } from '../../kinds';
 import {
   NOT_ALLOWED_TOOLTIP,
   useCheckPermissions,
@@ -72,6 +73,7 @@ export function FactCollectorsPanel(props: FactCollectorsPanelProps) {
   const api = useApi(dynamicChecksApiRef);
   const { canManage } = useCheckPermissions();
   const coveredKinds = useCoveredKindsText();
+  const entityLabel = useEntityLabel();
   const [expanded, setExpanded] = useState(false);
 
   const [collectors, setCollectors] = useState<FactCollector[]>();
@@ -196,8 +198,7 @@ export function FactCollectorsPanel(props: FactCollectorsPanelProps) {
 
   let summary;
   if (expanded) {
-    summary =
-      'Facts are collected on a schedule set in platform configuration. Collect now refreshes a source for every entity it covers.';
+    summary = `Facts are collected on a schedule set in platform configuration. Collect now refreshes a source for every ${entityLabel.singular} it covers.`;
   } else if (collectors && collectors.length > 0) {
     // One span: the card's subheader is a flex container, which drops the
     // space between a text node and a sibling element.
@@ -262,8 +263,8 @@ export function FactCollectorsPanel(props: FactCollectorsPanelProps) {
                   <TableCell>Collector</TableCell>
                   <TableCell>Collects for</TableCell>
                   <TableCell>Schedule</TableCell>
-                  <TableCell>Last collected</TableCell>
-                  <TableCell>Next run</TableCell>
+                  <TableCell>Last Collected</TableCell>
+                  <TableCell>Next Run</TableCell>
                   <TableCell align="right" />
                 </TableRow>
               </TableHead>

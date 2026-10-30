@@ -1,11 +1,29 @@
 import {
   canonicalKind,
+  countOf,
   filterCoversKinds,
   humanizeKind,
   inSentence,
   kindsFromChecks,
   kindsOfFilter,
+  pluralOf,
+  titleCase,
+  withArticle,
 } from './kinds';
+
+describe('titleCase', () => {
+  it('capitalizes every word but articles, conjunctions and short prepositions', () => {
+    expect(titleCase('Cluster component types passing')).toBe(
+      'Cluster Component Types Passing',
+    );
+    expect(titleCase('Passing by tier')).toBe('Passing by Tier');
+    expect(titleCase('Collects for')).toBe('Collects for');
+  });
+
+  it('capitalizes a minor word that comes first', () => {
+    expect(titleCase('the check')).toBe('The Check');
+  });
+});
 
 function check(filter?: unknown) {
   return {
@@ -97,6 +115,25 @@ describe('kind labels', () => {
   it('lowercases a label inside a sentence, but not an acronym', () => {
     expect(inSentence('Namespace')).toBe('namespace');
     expect(inSentence('API')).toBe('API');
+  });
+
+  it('makes a label plural', () => {
+    expect(pluralOf('Component')).toBe('Components');
+    expect(pluralOf('Cluster component type')).toBe('Cluster component types');
+    expect(pluralOf('Policy')).toBe('Policies');
+    expect(pluralOf('Gateway')).toBe('Gateways');
+    expect(pluralOf('Class')).toBe('Classes');
+    expect(pluralOf('API')).toBe('APIs');
+  });
+
+  it('counts with the singular or plural', () => {
+    expect(countOf(1, 'project', 'projects')).toBe('1 project');
+    expect(countOf(4, 'project', 'projects')).toBe('4 projects');
+  });
+
+  it('picks the article for a word', () => {
+    expect(withArticle('resource')).toBe('a resource');
+    expect(withArticle('entity')).toBe('an entity');
   });
 });
 

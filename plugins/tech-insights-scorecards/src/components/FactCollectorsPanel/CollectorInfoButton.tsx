@@ -6,7 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined';
 import { makeStyles } from '@material-ui/core/styles';
 import { factFieldsOf, type FactSchema } from '../../api/types';
-import { kindsOfFilter, useKindDisplay } from '../../kinds';
+import { kindsOfFilter, useEntityLabel, useKindDisplay } from '../../kinds';
 import { useCodeStyles } from '../codeStyles';
 
 const useStyles = makeStyles(theme => ({
@@ -31,9 +31,12 @@ const useStyles = makeStyles(theme => ({
 /** The entities a retriever collects for, as a phrase: "Components". */
 export function useCoveredKindsText(): (schema: FactSchema) => string {
   const kindDisplay = useKindDisplay();
+  const entityLabel = useEntityLabel();
   return schema => {
     const kinds = kindsOfFilter(schema.entityFilter);
-    return kinds === 'all' ? 'Every entity' : kinds.map(kindDisplay).join(', ');
+    return kinds === 'all'
+      ? `Every ${entityLabel.singular}`
+      : kinds.map(kindDisplay).join(', ');
   };
 }
 

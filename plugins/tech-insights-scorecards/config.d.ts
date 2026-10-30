@@ -9,6 +9,13 @@ export interface Config {
        * @deepVisibility frontend
        */
       kindLabels?: { [kind: string]: string };
+      /**
+       * The word for what checks run against, in text that covers several
+       * kinds, for example `{ singular: resource, plural: resources }`.
+       * Defaults to "entity" and "entities".
+       * @deepVisibility frontend
+       */
+      entityLabel?: { singular?: string; plural?: string };
     };
     maturity?: {
       /**

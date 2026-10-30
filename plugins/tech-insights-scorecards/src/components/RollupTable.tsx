@@ -13,10 +13,11 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { Link } from '@backstage/core-components';
 import { EntityDisplayName } from '@backstage/plugin-catalog-react';
-import { useKindLabel } from '../kinds';
+import { useEntityLabel, useKindLabel } from '../kinds';
 import type { RollupNode } from '../rollup';
 import { progressOf } from '../scoring';
 import { NotScoredChip, TierChip } from './TierChip';
+import { TierLadder } from './TierLadder';
 import { useEntityTabLink } from './useEntityTabLink';
 
 const useStyles = makeStyles({
@@ -40,6 +41,8 @@ export interface RollupTableProps {
    * lists them.
    */
   unscored?: 'toggle' | 'show';
+  /** Adds each row's checks passing per tier. */
+  showTierProgress?: boolean;
 }
 
 /**
@@ -54,9 +57,11 @@ export function RollupTable({
   showKind = true,
   expandable = true,
   unscored = 'toggle',
+  showTierProgress = false,
 }: RollupTableProps) {
   const classes = useStyles();
   const kindLabel = useKindLabel();
+  const entityLabel = useEntityLabel();
   const tabLink = useEntityTabLink();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [revealed, setRevealed] = useState(false);
@@ -135,6 +140,11 @@ export function RollupTable({
                 '—'
               )}
             </TableCell>
+            {showTierProgress && (
+              <TableCell>
+                {node.scored ? <TierLadder checks={node.checks} /> : '—'}
+              </TableCell>
+            )}
           </TableRow>
           {isOpen && renderRows(node.children, depth + 1, path)}
         </Fragment>
@@ -149,8 +159,9 @@ export function RollupTable({
           <TableRow>
             <TableCell>Name</TableCell>
             {showKind && <TableCell>Kind</TableCell>}
-            <TableCell>Tier</TableCell>
-            <TableCell>Checks passing</TableCell>
+            <TableCell>Current Tier</TableCell>
+            <TableCell>Checks Passing</TableCell>
+            {showTierProgress && <TableCell>Passing by Tier</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>{renderRows(nodes, 0, '')}</TableBody>
@@ -163,8 +174,8 @@ export function RollupTable({
             onClick={() => setRevealed(!revealed)}
           >
             {showUnscored
-              ? 'Hide entities not scored'
-              : `Show entities not scored${
+              ? `Hide ${entityLabel.plural} not scored`
+              : `Show ${entityLabel.plural} not scored${
                   unscoredCount ? ` (${unscoredCount})` : ''
                 }`}
           </MuiLink>
