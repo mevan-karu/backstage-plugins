@@ -198,6 +198,9 @@ techInsights:
     openchoreoDeploymentFactRetriever:
       cadence: '*/15 * * * *'
       lifecycle: { timeToLive: { hours: 6 } }
+    githubRepositoryFactRetriever:
+      cadence: '0 2 * * *'
+      lifecycle: { timeToLive: { days: 7 } }
 
 auth:
   providers:
